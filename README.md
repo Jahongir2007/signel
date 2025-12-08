@@ -24,7 +24,7 @@ npm install resign
 
 ### Via CDN
 ```html
-<script src="https://cdn.jsdelivr.net/gh/jahongir2007/resignjs/resign.js"></script>
+<script src="https://resignjs.onrender.com/resign.js"></script>
 ```
 
 ### Usage 🚀
