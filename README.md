@@ -69,7 +69,7 @@ El("#tabs", proxy => {
 </script>
 ```
 
-#### Template Engine
+#### 4. Template Engine
 ```html
 <div id="userCard">
   <div class="p-4 bg-gray-800 rounded text-gray-100">
