@@ -8,7 +8,8 @@ A **lightweight reactive JavaScript library** for building interactive DOM appli
 
 - **Reactive Inputs**: Automatically update and save values to `localStorage`.  
 - **Reactive Lists**: Arrays update the DOM in real-time with simple callbacks.  
-- **Reactive Tabs**: Only one active tab at a time, fully reactive.  
+- **Reactive Tabs**: Only one active tab at a time, fully reactive.
+- **Template Engine**: Use `$$variable` syntax inside HTML templates for reactive updates.
 - **Utility Methods**: Add/remove classes, toggle elements, listen to events easily.  
 - **Lightweight & Simple**: No virtual DOM, easy to integrate with any project.  
 
@@ -65,6 +66,26 @@ El("#tabs", proxy => {
   // Activate tab1
   proxy.tab1.active = true;
 });
+</script>
+```
+
+#### Template Engine
+```html
+<div id="userCard">
+  <div class="p-4 bg-gray-800 rounded text-gray-100">
+    <h2 class="text-purple-500 font-bold">$$name</h2>
+    <p>Age: $$age</p>
+  </div>
+</div>
+
+<script>
+  El("#userCard", proxy => {
+    proxy.name = "Jahongir";
+    proxy.age = 18;
+        
+    // Updating reactive data automatically updates template
+    setTimeout(() => proxy.age = 19, 2000);
+  });
 </script>
 ```
 
