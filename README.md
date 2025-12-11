@@ -19,7 +19,7 @@ A **lightweight reactive JavaScript library** for building interactive DOM appli
 
 ### Via npm
 ```bash
-npm install resignjs
+npm install signel
 ```
 
 ### Via CDN
