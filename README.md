@@ -1,6 +1,6 @@
-# ResignJS 🔮
+# Signel.js 🔮
 
-A **lightweight reactive JavaScript library** for building interactive DOM applications with minimal boilerplate. Inspired by Vue and React, ResignJS makes arrays, inputs, and tabs fully reactive while keeping your code simple and readable.
+A **lightweight reactive JavaScript library** for building interactive DOM applications with minimal boilerplate. Inspired by Vue and React, Signel.js makes arrays, inputs, and tabs fully reactive while keeping your code simple and readable.
 
 ---
 
