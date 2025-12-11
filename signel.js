@@ -1,5 +1,5 @@
 /*
-  Resign.js v0.0.1
+  Signel.js v0.0.3
   Author: Jahongir Sobirov
   License: MIT
   All rights reserved
@@ -85,6 +85,10 @@ window.El = function(selector, callback) {
             return target[varName] ?? "";
           });
           el.innerHTML = html;
+
+          if (el.type === "checkbox") {
+            el.checked = target[key] === true;
+          }
         });
       }
 
@@ -172,6 +176,72 @@ window.El = function(selector, callback) {
         return true;
       }
     });
+  };
+
+  proxy.valof = function(selector){
+    const els = document.querySelectorAll(selector);
+    if(els.length === 1) return els[0].value;
+    return Array.from(els).map(el => el.value);
+  }
+
+
+  proxy.lastof = function(arr){
+    return arr[arr.length - 1];
+  }
+
+  proxy.check = function(fn) {
+    const els = elements;
+
+    if (typeof fn === "function") {
+        // Add change listener for all matched elements
+        els.forEach(el => {
+            el.addEventListener("change", e => fn(e));
+        });
+        return this; // allow chaining
+    } else {
+        // Return state
+        if (els.length === 1) return els[0].checked;
+        return Array.from(els).map(el => el.checked);
+    }
+  }
+
+  proxy.select = function(selector, state = {}) {
+    if (typeof selector !== "string") throw Error("selector must be string!");
+
+    const elements = document.querySelectorAll(selector);
+    if (!elements.length) throw Error(`Selector '${selector}' not found`);
+
+    // convert selector into a safe name
+    let objName = selector.replace(/[^a-zA-Z0-9]/g, "");
+
+    // store array of templates + states
+    const group = [];
+
+    elements.forEach((el, index) => {
+        const template = el.innerHTML;
+
+        // state clone for each element
+        const itemState = { ...state };
+
+        const prox = new Proxy(itemState, {
+            set(target, prop, value) {
+                target[prop] = value;
+
+                let html = template.replace(/\$\$(\w+)/g, (_, key) => target[key] ?? "");
+                el.innerHTML = html;
+
+                return true;
+            }
+        });
+
+        // initial render
+        el.innerHTML = template.replace(/\$\$(\w+)/g, (_, key) => prox[key] ?? "");
+
+        group.push(prox);
+    });
+
+    // if one element → treat like single object
+    proxy[objName] = group.length === 1 ? group[0] : group;
   };
 
   // Run user callback
