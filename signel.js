@@ -1,5 +1,5 @@
 /*
-  Signel.js v1.0.0
+  Signel.js v1.1.0
   Author: Jahongir Sobirov
   License: MIT
   All rights reserved
@@ -17,12 +17,19 @@ window.el = function (selector, state = {}) {
       target[prop] = value;
 
       render();
-      if (state.__bindings[prop]) {
-        state.__bindings[prop].forEach(inputEl => {
-          inputEl.value = value;
+      const bindings = state.__bindings[prop];
+      if (Array.isArray(bindings)) {
+        bindings.forEach(binding => {
+          if (typeof binding === "function") {
+            binding(value);               // watch()
+          } else if ("checked" in binding) {
+            binding.checked = !!value;    // checkbox
+          } else if ("value" in binding) {
+            binding.value = value;        // input / select
+          }
         });
       }
-      
+
       return true;
     }
   });
@@ -217,4 +224,10 @@ window.model = function(selector, state, key) {
       }
     });
   });
+};
+
+window.watch = function(state, key, fn) {
+  if (!state.__bindings) state.__bindings = {};
+  if (!state.__bindings[key]) state.__bindings[key] = [];
+  state.__bindings[key].push(fn);
 };
