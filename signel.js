@@ -1,251 +1,220 @@
 /*
-  Signel.js v0.0.3
+  Signel.js v1.0.0
   Author: Jahongir Sobirov
   License: MIT
   All rights reserved
 */
-window.input = function(selector, callback) {
-  document.querySelectorAll(selector).forEach(el => {
-    if (el.tagName !== 'INPUT' && el.tagName !== 'TEXTAREA') return;
+window.el = function (selector, state = {}) {
+  const elements = Array.from(document.querySelectorAll(selector));
+  if (!elements.length) throw Error("No elements found: " + selector);
 
-    // initial reactive state
-    let state = { value: el.value };
+  // save templates for each element
+  const templates = elements.map(el => el.innerHTML);
 
-    const proxy = new Proxy(state, {
-      set(target, prop, value) {
-        target[prop] = value;
-        // only update the input if it’s different
-        if(el.value)
-        if (el.value !== target[prop]) el.value = target[prop];
-        if (el.id) localStorage.setItem(el.id, value);
-        return true;
+  state.__bindings = {};
+  const proxy = new Proxy(state, {
+    set(target, prop, value) {
+      target[prop] = value;
+
+      render();
+      if (state.__bindings[prop]) {
+        state.__bindings[prop].forEach(inputEl => {
+          inputEl.value = value;
+        });
       }
-    });
-
-    // optional: expose a render function for templates
-    proxy.show = function(selector, template){
-      const out = document.querySelector(selector);
-      if (!out) return;
-
-      const html = template.replace(/\$\$([^\s]+)/g, (_, key) => {
-        const v = proxy[key];
-        return typeof v === "function" ? "" : (v ?? "");
-      });
-
-      out.innerHTML = html;
-    };
-
-    proxy.saved = function() {
-      if (!el.id) return null; 
-      localStorage.setItem(el.id, el.value);
-      return localStorage.getItem(el.id);
+      
+      return true;
     }
+  });
 
+  function render() {
+    elements.forEach((el, i) => {
+      el.innerHTML = templates[i].replace(/\$\$(\w+)/g, (_, key) => {
+        return proxy[key] ?? "";
+      });
+    });
+  }
 
-    // listen to user typing
-    el.addEventListener('input', e => {
-      proxy.value = e.target.value;  // update proxy
-      callback(proxy);               // run user 
+  render();
+  return proxy;
+};
+
+window.button = function (selector, fn) {
+  const elements = Array.from(document.querySelectorAll(selector));
+  if (!elements.length) throw Error("No elements found: " + selector);
+
+  elements.forEach(el => {
+    el.addEventListener("click", () => fn(el));
+  });
+
+  return elements;
+};
+
+window.input = function (selector, state, key) {
+  const inputs = Array.from(document.querySelectorAll(selector));
+
+  // Bind each input
+  inputs.forEach(el => {
+    // When typing → update state → updates DOM + other inputs
+    el.addEventListener("input", () => {
+      state[key] = el.value;
     });
 
-    // initial callback run
-    callback(proxy);
+    // store binding
+    if (!state.__bindings[key]) state.__bindings[key] = [];
+    state.__bindings[key].push(el);
+
+    // initial sync state → input
+    el.value = state[key] ?? "";
   });
 };
 
-window.El = function(selector, callback) {
-  if (typeof selector !== "string") throw Error("Data type of element should be 'string'");
+window.toggle = function ({ btn, content }) {
+  const btns = Array.from(document.querySelectorAll(btn));
+  if (!btns.length) throw Error("No elements found: " + btn);
 
-  const state = {};
-  const elements = document.querySelectorAll(selector);
-  const bindings = {};
-  const templates = {};
+  const contents = Array.from(document.querySelectorAll(content));
+  if (!contents.length) throw Error("No elements found: " + content);
 
-  // Initialize bindings and templates for all elements
-  elements.forEach(el => {
-    const tag = el.tagName.toLowerCase();
-
-    if (!bindings[tag]) bindings[tag] = [];
-    bindings[tag].push(el);
-
-    if (!templates[tag]) templates[tag] = [];
-    templates[tag].push(el.innerHTML);
+  btns.forEach(btnEl => {
+    btnEl.addEventListener("click", () => {
+      contents.forEach(contentEl => {
+        contentEl.style.display =
+          contentEl.style.display === "none" ? "block" : "none";
+      });
+    });
   });
+};
 
-  // Shared reactive proxy for all matched elements
-  const proxy = new Proxy(state, {
-    set(target, key, value) {
-      target[key] = value;
+window.tabs = function({ btn, panel }) {
+  if (!Array.isArray(btn) || !Array.isArray(panel)) {
+    throw Error("btn and panel must be arrays");
+  }
 
-      // Update all elements
-      for (const tag in bindings) {
-        bindings[tag].forEach((el, i) => {
-          let html = templates[tag][i];
-          html = html.replace(/\$\$([a-zA-Z0-9_]+)/g, (_, varName) => {
-            return target[varName] ?? "";
-          });
-          el.innerHTML = html;
+  if (btn.length !== panel.length) {
+    throw Error("btn and panel arrays must have equal length");
+  }
 
-          if (el.type === "checkbox") {
-            el.checked = target[key] === true;
-          }
-        });
-      }
+  btn.forEach((btnSelector, i) => {
+    const btns = document.querySelectorAll(btnSelector);
+    const panels = document.querySelectorAll(panel[i]);
+
+    if (!btns.length) throw Error(`Buttons not found: ${btnSelector}`);
+    if (!panels.length) throw Error(`Panels not found: ${panel[i]}`);
+
+    // hide all panels at start except first
+    panels.forEach((p, index) =>
+      p.style.display = index === 0 ? "block" : "none"
+    );
+
+    btns.forEach((btnEl, index) => {
+      btnEl.addEventListener("click", () => {
+        // hide all panels
+        panels.forEach(p => p.style.display = "none");
+
+        // show the panel with same index
+        panels[index].style.display = "block";
+      });
+    });
+  });
+};
+
+window.checkbox = function(selector, state, key) {
+  const els = document.querySelectorAll(selector);
+  els.forEach(el => {
+    el.checked = state[key] ?? false;
+
+    el.addEventListener("change", () => state[key] = el.checked);
+
+    if (!state.__bindings) state.__bindings = {};
+    if (!state.__bindings[key]) state.__bindings[key] = [];
+    state.__bindings[key].push(el);
+  });
+};
+
+function reactiveArray(arr, notify) {
+  return new Proxy(arr, {
+    set(target, prop, value) {
+      target[prop] = value;
+      notify();
+      return true;
+    }
+  });
+}
+
+window.list = function(initial = []) {
+  if (!Array.isArray(initial)) {
+    throw Error("list() expects an array");
+  }
+
+  const subscribers = new Set();
+
+  function notify() {
+    subscribers.forEach(fn => fn(proxy));
+  }
+
+  const proxy = new Proxy(initial, {
+    set(target, prop, value) {
+      target[prop] = value;
+
+      // ignore length changes optimization (optional)
+      notify();
 
       return true;
     }
   });
 
-  // Helper methods for **all matched elements**
-  proxy.classes = function(classNames) {
-    if (typeof classNames !== 'string') throw Error("Data type of classNames should be 'string'");
-    elements.forEach(el => el.className = classNames);
+  proxy.subscribe = function(fn) {
+    subscribers.add(fn);
+    fn(proxy); // initial run
+    return () => subscribers.delete(fn);
   };
-
-  proxy.addClass = function(className) {
-    if (typeof className !== 'string') throw Error("Data type of className should be 'string'");
-    elements.forEach(el => el.classList.add(className));
-  };
-
-  proxy.removeClass = function(className) {
-    if (typeof className !== 'string') throw Error("Data type of className should be 'string'");
-    elements.forEach(el => el.classList.remove(className));
-  };
-
-  proxy.on = function(event, fn) {
-    if (typeof event !== 'string') throw Error("Data type of event should be 'string'");
-    elements.forEach(el => el.addEventListener(event, fn));
-  };
-
-  proxy.toggle = function(selector) {
-    if (typeof selector !== "string") {
-      throw Error("Data type of element should be 'string'");
-    }
-
-    const el = document.querySelector(selector);
-    if (!el) throw Error("Element not found: " + selector);
-
-    // Save original display value
-    if (!el.dataset.originalDisplay) {
-      el.dataset.originalDisplay = getComputedStyle(el).display;
-      if (el.dataset.originalDisplay === "none") {
-        el.dataset.originalDisplay = "block"; // fallback
-      }
-    }
-
-    // Toggle
-    el.style.display =
-      el.style.display === "none" ? el.dataset.originalDisplay : "none";
-  };
-
-  proxy.list = function(key, arr, listFn) {
-    el = document.querySelector(selector);
-    if(!proxy[key]) proxy[key] = new Proxy(arr, {
-      set(target, prop, value){
-        target[prop] = value;
-        el.innerHTML = proxy[key].map(item => listFn(item)).join(""); 
-        
-        return true;
-      }
-    });
-
-    el.innerHTML = proxy[key].map(item => listFn(item)).join("");
-  };
-
-  proxy.tab = function(name, contentEl){
-    const el = document.querySelector(contentEl);
-    if(!proxy.__tabs) proxy.__tabs = {};
-
-    proxy.__tabs[name] = {el};
-    // proxy["tabNames"]
-    proxy[name] = new Proxy({contentEl, active: false}, {
-      set(target, prop, value){
-        target[prop] = value;
-
-        if(prop === "active" && value === true){
-          for(let key in proxy.__tabs){
-            if(key !== name){
-              proxy[key].active = false;
-            }
-          }
-        }
-
-        if(prop === "active"){
-          document.querySelector(contentEl).style.display = value ? "block" : "none";
-        }
-        return true;
-      }
-    });
-  };
-
-  proxy.valof = function(selector){
-    const els = document.querySelectorAll(selector);
-    if(els.length === 1) return els[0].value;
-    return Array.from(els).map(el => el.value);
-  }
-
-
-  proxy.lastof = function(arr){
-    return arr[arr.length - 1];
-  }
-
-  proxy.check = function(fn) {
-    const els = elements;
-
-    if (typeof fn === "function") {
-        // Add change listener for all matched elements
-        els.forEach(el => {
-            el.addEventListener("change", e => fn(e));
-        });
-        return this; // allow chaining
-    } else {
-        // Return state
-        if (els.length === 1) return els[0].checked;
-        return Array.from(els).map(el => el.checked);
-    }
-  }
-
-  proxy.select = function(selector, state = {}) {
-    if (typeof selector !== "string") throw Error("selector must be string!");
-
-    const elements = document.querySelectorAll(selector);
-    if (!elements.length) throw Error(`Selector '${selector}' not found`);
-
-    // convert selector into a safe name
-    let objName = selector.replace(/[^a-zA-Z0-9]/g, "");
-
-    // store array of templates + states
-    const group = [];
-
-    elements.forEach((el, index) => {
-        const template = el.innerHTML;
-
-        // state clone for each element
-        const itemState = { ...state };
-
-        const prox = new Proxy(itemState, {
-            set(target, prop, value) {
-                target[prop] = value;
-
-                let html = template.replace(/\$\$(\w+)/g, (_, key) => target[key] ?? "");
-                el.innerHTML = html;
-
-                return true;
-            }
-        });
-
-        // initial render
-        el.innerHTML = template.replace(/\$\$(\w+)/g, (_, key) => prox[key] ?? "");
-
-        group.push(prox);
-    });
-
-    // if one element → treat like single object
-    proxy[objName] = group.length === 1 ? group[0] : group;
-  };
-
-  // Run user callback
-  if (typeof callback === "function") callback(proxy);
 
   return proxy;
+};
+
+window.renderList = function(selector, reactiveList, renderItem) {
+  const els = document.querySelectorAll(selector);
+
+  reactiveList.subscribe(arr => {
+    els.forEach(el => {
+      el.innerHTML = arr.map(renderItem).join("");
+    });
+  });
+}
+
+window.model = function(selector, state, key) {
+  const els = document.querySelectorAll(selector);
+  if (!els.length) throw Error("No elements found");
+
+  if (!state.__bindings) state.__bindings = {};
+  if (!state.__bindings[key]) state.__bindings[key] = [];
+
+  els.forEach(el => {
+    // initial value
+    if (el.type === "checkbox") {
+      el.checked = !!state[key];
+    } else {
+      el.value = state[key] ?? "";
+    }
+
+    const event =
+      el.tagName === "SELECT" || el.type === "checkbox"
+        ? "change"
+        : "input";
+
+    // input → state
+    el.addEventListener(event, () => {
+      state[key] = el.type === "checkbox" ? el.checked : el.value;
+    });
+
+    // state → input
+    state.__bindings[key].push(value => {
+      if (el.type === "checkbox") {
+        el.checked = !!value;
+      } else {
+        el.value = value ?? "";
+      }
+    });
+  });
 };
