@@ -21,64 +21,95 @@ No dependencies, works in modern browsers.
 
 ### Usage 🚀
 
-#### 1. Reactive Input
+#### 1. Reactive Text and Input
 ```html
-<input id="nameInput" placeholder="Type your name"/>
-<p id="greeting"></p>
+<p>Hello $$name</p>
+<input id="name">
+```
+```js
+let state = el("p", { name: "John" });
+input("#name", state, "name");
 
-<script>
-input("#nameInput", proxy => {
-  proxy.show("#greeting", "Hello, $$value!");
-});
-</script>
+// Programmatic change
+setTimeout(() => state.name = "John Doe", 2000);
 ```
 
-#### 2. Reactive list
+#### 2. Button Click
 ```html
-<ul id="todoList"></ul>
-
-<script>
-El("#todoList", proxy => {
-  proxy.list("todos", ["Learn JS", "Build ResignJS"], item => `<li class="p-2 bg-gray-800 mb-2 rounded">${item}</li>`);
-  proxy.todos.push("New Task"); // Automatically updates the list
-});
-</script>
+<button id="btn">Click me</button>
+<p>Count: $$count</p>
+```
+```js
+let state = el("p", { count: 0 });
+button("#btn", () => state.count++);
 ```
 
-#### 3. Reactive tabs
+#### 3. Checkbox
 ```html
-<div id="tab1">Tab 1 content</div>
-<div id="tab2" style="display:none">Tab 2 content</div>
-
-<script>
-El("#tabs", proxy => {
-  proxy.tab("tab1", "#tab1");
-  proxy.tab("tab2", "#tab2");
-
-  // Activate tab1
-  proxy.tab1.active = true;
-});
-</script>
+<input type="checkbox" id="agree">
+<p>Agreed: $$agree</p>
+```
+```js
+let state = el("p", { agree: false });
+checkbox("#agree", state, "agree");
 ```
 
-#### 4. Template Engine
+#### 4. Select Dropdown with `model()`
 ```html
-<div id="userCard">
-  <div class="p-4 bg-gray-800 rounded text-gray-100">
-    <h2 class="text-purple-500 font-bold">$$name</h2>
-    <p>Age: $$age</p>
-  </div>
-</div>
+<select id="country">
+  <option value="uz">Uzbekistan</option>
+  <option value="us">USA</option>
+</select>
+<p>Country: $$country</p>
+```
+```js
+let state = el("p", { country: "uz" });
+model("#country", state, "country");
+```
 
-<script>
-  El("#userCard", proxy => {
-    proxy.name = "Jahongir";
-    proxy.age = 18;
-        
-    // Updating reactive data automatically updates template
-    setTimeout(() => proxy.age = 19, 2000);
-  });
-</script>
+#### 5. Toggle Elements
+```html
+<button class="toggle-btn">Show/Hide</button>
+<div class="box">Hello!</div>
+```
+```js
+toggle({
+  btn: ".toggle-btn",
+  content: ".box"
+});
+```
+
+#### 6.Tabs
+```html
+<button class="tab-btn1">Tab 1</button>
+<button class="tab-btn2">Tab 2</button>
+
+<div class="tab-panel1">Content 1</div>
+<div class="tab-panel2">Content 2</div>
+```
+```js
+tabs({
+  btn: [".tab-btn1", ".tab-btn2"],
+  panel: [".tab-panel1", ".tab-panel2"]
+});
+```
+
+#### 7.Reactive Arrays (Todos)
+```html
+<ul class="list"></ul>
+<input class="newwork">
+<button class="addwork">Add</button>
+```
+```js
+let todos = list(["Task 1", "Task 2"]);
+
+renderList(".list", todos, item => `<li>${item}</li>`);
+
+button(".addwork", () => {
+  const inputEl = document.querySelector(".newwork");
+  todos.push(inputEl.value);
+  inputEl.value = "";
+});
 ```
 
 ### API Overview 📝
@@ -97,8 +128,14 @@ El("#tabs", proxy => {
 | `reactiveArray(arr, notify)`                     | Low-level helper (internal).                                                                         |
 
 
-### Why Signel? 💡
+### Notes / Best Practices 💡
 
- - **Minimal**: Small footprint, no virtual DOM.
- - **Reactive**: Automatically updates DOM when your data changes.
- - **Flexible**: Works in any project, integrates with existing HTML easily.
+ - Use `el()` for reactive objects.
+ - Use `list()` for reactive arrays.
+ - `model()` handles two-way binding for <input>, <textarea>, <select>, <checkbox>.
+ - `renderList()` is the only function that renders arrays to DOM.
+ - You can combine `list()` + `el()` for complex reactive state.
+ - Avoid overwriting arrays (`state.todos = [...]`), instead use array methods (`push`, `pop`, `splice`) to maintain reactivity.
+
+### License
+MIT — free to use and modify.
