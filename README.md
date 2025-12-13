@@ -1,7 +1,12 @@
-# 🚀 Signel.js v1.0.0 — Beginner-Friendly Guide
+# 🚀 Signel.js v1.1.0 — Beginner-Friendly Guide
+
+### 🆕 What’s New in v1.1
+#### ✅ Watchers (`watch`)
+> NEW in v1.1: `watch()` — react to state changes without touching the DOM directly.
 
 Signel.js is a tiny reactive JS library for building dynamic UIs easily.
 It allows **reactive state**, **reactive lists**, **tabs**, **toggles**, and **buttons**.
+
 
 ---
 
@@ -112,6 +117,35 @@ button(".addwork", () => {
 });
 ```
 
+#### 8. Watchers (NEW 🔥)
+Why `watch()`?
+
+Sometimes you don’t want to update the DOM directly.
+You just want to **react** to state changes.
+
+Examples:
+ - Live validation
+ - Derived values
+ - Side effects
+ - Debugging
+
+```js
+let state = el(".box", { count: 0 });
+
+watch(state, "count", value => {
+  console.log("Count changed to:", value);
+});
+
+state.count++; // logs → Count changed to: 1
+```
+
+##### Multiple Watchers on Same Key
+```js
+watch(state, "username", v => console.log("Username:", v));
+watch(state, "username", v => console.log("Length:", v.length));
+```
+All watchers run in order.
+
 ### API Overview 📝
 
 | Function                                         | Description                                                                                          |
@@ -126,6 +160,7 @@ button(".addwork", () => {
 | `list(initial)`                                  | Creates reactive array. Supports `.push()`, `.pop()`, `.splice()` with automatic subscriber updates. |
 | `renderList(selector, reactiveList, renderItem)` | Renders reactive array to DOM.                                                                       |
 | `reactiveArray(arr, notify)`                     | Low-level helper (internal).                                                                         |
+| `watch(state, key, fn)`                          | 🔥 Run logic when a state key changes                                                                         |
 
 
 ### Notes / Best Practices 💡
