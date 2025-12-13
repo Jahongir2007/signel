@@ -1,17 +1,7 @@
-# Signel.js 🔮
+# 🚀 Signel.js v1.0.0 — Beginner-Friendly Guide
 
-A **lightweight reactive JavaScript library** for building interactive DOM applications with minimal boilerplate. Inspired by Vue and React, Signel.js makes arrays, inputs, and tabs fully reactive while keeping your code simple and readable.
-
----
-
-## Features ✨
-
-- **Reactive Inputs**: Automatically update and save values to `localStorage`.  
-- **Reactive Lists**: Arrays update the DOM in real-time with simple callbacks.  
-- **Reactive Tabs**: Only one active tab at a time, fully reactive.
-- **Template Engine**: Use `$$variable` syntax inside HTML templates for reactive updates.
-- **Utility Methods**: Add/remove classes, toggle elements, listen to events easily.  
-- **Lightweight & Simple**: No virtual DOM, easy to integrate with any project.  
+Signel.js is a tiny reactive JS library for building dynamic UIs easily.
+It allows **reactive state**, **reactive lists**, **tabs**, **toggles**, and **buttons**.
 
 ---
 
@@ -24,8 +14,10 @@ npm install signel
 
 ### Via CDN
 ```html
-<script src="https://resignjs.onrender.com/resign.js"></script>
+<script src="https://signel.onrender.com/signel.js"></script>
 ```
+
+No dependencies, works in modern browsers.
 
 ### Usage 🚀
 
@@ -91,19 +83,21 @@ El("#tabs", proxy => {
 
 ### API Overview 📝
 
-| Method                               | Description                                                            |
-| ------------------------------------ | ---------------------------------------------------------------------- |
-| `input(selector, callback)`          | Makes `<input>` or `<textarea>` reactive, updates DOM and localStorage |
-| `El(selector, callback)`             | Main reactive wrapper for elements                                     |
-| `proxy.list(key, array, templateFn)` | Reactive lists                                                         |
-| `proxy.tab(name, selector)`          | Reactive tabs                                                          |
-| `proxy.classes(str)`                 | Set classes for elements                                               |
-| `proxy.addClass(str)`                | Add class                                                              |
-| `proxy.removeClass(str)`             | Remove class                                                           |
-| `proxy.on(event, fn)`                | Add event listeners                                                    |
-| `proxy.toggle(selector)`             | Toggle element display                                                 |
+| Function                                         | Description                                                                                          |
+| ------------------------------------------------ | ---------------------------------------------------------------------------------------------------- |
+| `el(selector, state)`                            | Creates a reactive object bound to DOM elements. Supports template syntax `$$key`.                   |
+| `button(selector, fn)`                           | Adds click event listener(s) to buttons.                                                             |
+| `input(selector, state, key)`                    | Two-way binding for text inputs / textareas.                                                         |
+| `model(selector, state, key)`                    | Two-way binding for `<input>`, `<select>`, `<textarea>`, `<checkbox>`.                               |
+| `checkbox(selector, state, key)`                 | Bind checkboxes to state.                                                                            |
+| `toggle({btn, content})`                         | Show/hide elements when buttons are clicked.                                                         |
+| `tabs({btn, panel})`                             | Simple tabs system.                                                                                  |
+| `list(initial)`                                  | Creates reactive array. Supports `.push()`, `.pop()`, `.splice()` with automatic subscriber updates. |
+| `renderList(selector, reactiveList, renderItem)` | Renders reactive array to DOM.                                                                       |
+| `reactiveArray(arr, notify)`                     | Low-level helper (internal).                                                                         |
 
-### Why ResignJS? 💡
+
+### Why Signel? 💡
 
  - **Minimal**: Small footprint, no virtual DOM.
  - **Reactive**: Automatically updates DOM when your data changes.
