@@ -1,176 +1,325 @@
-# 🚀 Signel.js v1.1.0 — Beginner-Friendly Guide
+# Signel.js v1.2.0
 
-### 🆕 What’s New in v1.1
-#### ✅ Watchers (`watch`)
-> NEW in v1.1: `watch()` — react to state changes without touching the DOM directly.
+**Signel.js** is a tiny reactive JavaScript micro‑library for building interactive UI without frameworks.
+It focuses on **reactive state**, **DOM bindings**, and **simple helpers**.
 
-Signel.js is a tiny reactive JS library for building dynamic UIs easily.
-It allows **reactive state**, **reactive lists**, **tabs**, **toggles**, and **buttons**.
-
+Author: Jahongir Sobirov
+License: MIT
 
 ---
 
-## Installation 💻
+## Table of Contents
 
-### Via npm
-```bash
-npm install signel
-```
+1. Getting Started
+2. Core Concept: Reactive State
+3. `el()` – Reactive Template Binding
+4. Events Helpers
 
-### Via CDN
+   * `click()` / `button()`
+   * `hover()`
+5. Form Bindings
+
+   * `input()`
+   * `checkbox()`
+   * `model()`
+6. Watching State Changes
+
+   * `watch()`
+7. UI Helpers
+
+   * `toggle()`
+   * `tabs()`
+   * `tooltip()`
+8. Reactive Lists
+
+   * `list()`
+   * `renderList()`
+9. Styling & Classes
+10. Design Philosophy & Notes
+
+---
+
+## 1. Getting Started
+
+Include Signel.js in your page:
+
 ```html
-<script src="https://signel.onrender.com/signel.js"></script>
+<script src="signel.js"></script>
 ```
 
-No dependencies, works in modern browsers.
+Signel works directly with the DOM. No build tools required.
 
-### Usage 🚀
+---
 
-#### 1. Reactive Text and Input
-```html
-<p>Hello $$name</p>
-<input id="name">
-```
+## 2. Core Concept: Reactive State
+
+Signel uses JavaScript `Proxy` to make state reactive.
+
+Whenever you update a state property, **DOM automatically re‑renders**.
+
 ```js
-let state = el("p", { name: "John" });
-input("#name", state, "name");
-
-// Programmatic change
-setTimeout(() => state.name = "John Doe", 2000);
+const state = el("#app", {
+  name: "Jahongir",
+  count: 0
+});
 ```
 
-#### 2. Button Click
+---
+
+## 3. `el(selector, state)` – Reactive Template Binding
+
+Binds a state object to one or more elements.
+
+### HTML
+
 ```html
-<button id="btn">Click me</button>
-<p>Count: $$count</p>
+<div id="app">
+  Hello $$name 👋
+  <p>Count: $$count</p>
+</div>
 ```
+
+### JS
+
 ```js
-let state = el("p", { count: 0 });
-button("#btn", () => state.count++);
+const state = el("#app", {
+  name: "Jahongir",
+  count: 1,
+  classes: "card active",
+  style: "color: blue;"
+});
 ```
 
-#### 3. Checkbox
-```html
-<input type="checkbox" id="agree">
-<p>Agreed: $$agree</p>
-```
+### Supported features
+
+* `$$key` → text interpolation
+* `state.style` → inline styles
+* `state.classes` → className string
+
+---
+
+## 4. Event Helpers
+
+### `click(selector, fn)` / `button(selector, fn)`
+
+Attach click listeners.
+
 ```js
-let state = el("p", { agree: false });
-checkbox("#agree", state, "agree");
+click("#inc", () => {
+  state.count++;
+});
 ```
 
-#### 4. Select Dropdown with `model()`
-```html
-<select id="country">
-  <option value="uz">Uzbekistan</option>
-  <option value="us">USA</option>
-</select>
-<p>Country: $$country</p>
-```
+> `button()` is an alias of `click()`
+
+---
+
+### `hover(selector, fn)`
+
 ```js
-let state = el("p", { country: "uz" });
-model("#country", state, "country");
+hover(".card", el => {
+  el.style.background = "#eee";
+});
 ```
 
-#### 5. Toggle Elements
+---
+
+## 5. Form Bindings
+
+### `input(selector, state, key)`
+
+One‑way input binding.
+
 ```html
-<button class="toggle-btn">Show/Hide</button>
-<div class="box">Hello!</div>
+<input id="nameInput" />
 ```
+
+```js
+input("#nameInput", state, "name");
+```
+
+---
+
+### `checkbox(selector, state, key)`
+
+```html
+<input type="checkbox" id="agree" />
+```
+
+```js
+checkbox("#agree", state, "accepted");
+```
+
+---
+
+### `model(selector, state, key)` (Two‑way binding)
+
+Works like `v-model`.
+
+```html
+<input id="username" />
+```
+
+```js
+model("#username", state, "name");
+```
+
+Supports:
+
+* text inputs
+* checkboxes
+* select
+
+---
+
+## 6. Watching State Changes
+
+### `watch(state, key, fn)`
+
+Run logic when a value changes.
+
+```js
+watch(state, "count", value => {
+  console.log("Count changed:", value);
+});
+```
+
+---
+
+## 7. UI Helpers
+
+### `toggle({ btn, content })`
+
 ```js
 toggle({
   btn: ".toggle-btn",
-  content: ".box"
+  content: ".toggle-content"
 });
 ```
 
-#### 6.Tabs
-```html
-<button class="tab-btn1">Tab 1</button>
-<button class="tab-btn2">Tab 2</button>
+Click button → show/hide content.
 
-<div class="tab-panel1">Content 1</div>
-<div class="tab-panel2">Content 2</div>
-```
+---
+
+### `tabs({ btn, panel })`
+
 ```js
 tabs({
-  btn: [".tab-btn1", ".tab-btn2"],
-  panel: [".tab-panel1", ".tab-panel2"]
+  btn: [".tab-btn"],
+  panel: [".tab-panel"]
 });
 ```
 
-#### 7.Reactive Arrays (Todos)
+Tabs are matched by index.
+
+---
+
+### `tooltip(selector)`
+
+### HTML
+
 ```html
-<ul class="list"></ul>
-<input class="newwork">
-<button class="addwork">Add</button>
-```
-```js
-let todos = list(["Task 1", "Task 2"]);
-
-renderList(".list", todos, item => `<li>${item}</li>`);
-
-button(".addwork", () => {
-  const inputEl = document.querySelector(".newwork");
-  todos.push(inputEl.value);
-  inputEl.value = "";
-});
+<button data-tooltip="tip1">Hover</button>
+<div id="tip1" class="tooltip">Hello</div>
 ```
 
-#### 8. Watchers (NEW 🔥)
-Why `watch()`?
-
-Sometimes you don’t want to update the DOM directly.
-You just want to **react** to state changes.
-
-Examples:
- - Live validation
- - Derived values
- - Side effects
- - Debugging
+### JS
 
 ```js
-let state = el(".box", { count: 0 });
-
-watch(state, "count", value => {
-  console.log("Count changed to:", value);
-});
-
-state.count++; // logs → Count changed to: 1
+tooltip("[data-tooltip]");
 ```
 
-##### Multiple Watchers on Same Key
+Tooltip follows mouse.
+
+---
+
+## 8. Reactive Lists
+
+### `list(initialArray)`
+
+Creates a reactive array.
+
 ```js
-watch(state, "username", v => console.log("Username:", v));
-watch(state, "username", v => console.log("Length:", v.length));
+const todos = list(["Learn JS", "Build Startup"]);
 ```
-All watchers run in order.
 
-### API Overview 📝
+---
 
-| Function                                         | Description                                                                                          |
-| ------------------------------------------------ | ---------------------------------------------------------------------------------------------------- |
-| `el(selector, state)`                            | Creates a reactive object bound to DOM elements. Supports template syntax `$$key`.                   |
-| `button(selector, fn)`                           | Adds click event listener(s) to buttons.                                                             |
-| `input(selector, state, key)`                    | Two-way binding for text inputs / textareas.                                                         |
-| `model(selector, state, key)`                    | Two-way binding for `<input>`, `<select>`, `<textarea>`, `<checkbox>`.                               |
-| `checkbox(selector, state, key)`                 | Bind checkboxes to state.                                                                            |
-| `toggle({btn, content})`                         | Show/hide elements when buttons are clicked.                                                         |
-| `tabs({btn, panel})`                             | Simple tabs system.                                                                                  |
-| `list(initial)`                                  | Creates reactive array. Supports `.push()`, `.pop()`, `.splice()` with automatic subscriber updates. |
-| `renderList(selector, reactiveList, renderItem)` | Renders reactive array to DOM.                                                                       |
-| `reactiveArray(arr, notify)`                     | Low-level helper (internal).                                                                         |
-| `watch(state, key, fn)`                          | 🔥 Run logic when a state key changes                                                                         |
+### `renderList(selector, reactiveList, renderItem)`
 
+```html
+<ul id="todos"></ul>
+```
 
-### Notes / Best Practices 💡
+```js
+renderList("#todos", todos, item => `<li>${item}</li>`);
+```
 
- - Use `el()` for reactive objects.
- - Use `list()` for reactive arrays.
- - `model()` handles two-way binding for <input>, <textarea>, <select>, <checkbox>.
- - `renderList()` is the only function that renders arrays to DOM.
- - You can combine `list()` + `el()` for complex reactive state.
- - Avoid overwriting arrays (`state.todos = [...]`), instead use array methods (`push`, `pop`, `splice`) to maintain reactivity.
+Update array → UI updates automatically.
 
-### License
-MIT — free to use and modify.
+```js
+todos.push("Ship Signel.js");
+```
+
+---
+
+## 9. Styling & Classes
+
+### Classes
+
+```js
+state.classes = "card active";
+```
+
+> Overwrites element className
+
+### Styles
+
+```js
+state.style = "color:red; font-weight:bold;";
+```
+
+---
+
+## 10. Design Philosophy & Notes
+
+* No virtual DOM
+* No JSX
+* No build step
+* State‑driven UI
+* Inspired by Vue / Svelte / Solid
+
+### Recommendations
+
+* Keep `id` static in HTML
+* Use state for UI, not DOM queries
+* Avoid heavy re‑render in big templates
+
+---
+
+## Example
+
+```html
+<div id="app">Hello $$name</div>
+<input id="name" />
+<button id="btn">Change</button>
+```
+
+```js
+const state = el("#app", { name: "World" });
+model("#name", state, "name");
+click("#btn", () => state.name = "Signel.js");
+```
+
+---
+
+## Final Words
+
+Signel.js is perfect for:
+
+* small projects
+* admin panels
+* landing pages
+* learning reactivity internals
+
+You are encouraged to extend it 🚀
