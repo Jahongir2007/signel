@@ -1,5 +1,5 @@
 /*
-  Signel.js v1.1.0
+  Signel.js v1.2.0
   Author: Jahongir Sobirov
   License: MIT
   All rights reserved
@@ -39,6 +39,14 @@ window.el = function (selector, state = {}) {
       el.innerHTML = templates[i].replace(/\$\$(\w+)/g, (_, key) => {
         return proxy[key] ?? "";
       });
+
+      if(state.style){
+        el.style.cssText = state.style;
+      }
+
+      if(state.classes){
+        el.className = state.classes;
+      }
     });
   }
 
@@ -47,6 +55,17 @@ window.el = function (selector, state = {}) {
 };
 
 window.button = function (selector, fn) {
+  const elements = Array.from(document.querySelectorAll(selector));
+  if (!elements.length) throw Error("No elements found: " + selector);
+
+  elements.forEach(el => {
+    el.addEventListener("click", () => fn(el));
+  });
+
+  return elements;
+};
+
+window.click = function (selector, fn) {
   const elements = Array.from(document.querySelectorAll(selector));
   if (!elements.length) throw Error("No elements found: " + selector);
 
@@ -230,4 +249,44 @@ window.watch = function(state, key, fn) {
   if (!state.__bindings) state.__bindings = {};
   if (!state.__bindings[key]) state.__bindings[key] = [];
   state.__bindings[key].push(fn);
+};
+
+window.hover = function(selector, fn) {
+  const elements = Array.from(document.querySelectorAll(selector));
+  if (!elements.length) throw Error("No elements found: " + selector);
+
+  elements.forEach(el => {
+    el.addEventListener("mouseenter", () => fn(el));
+  });
+
+  return elements;
+};
+
+window.tooltip = function (el) {
+  const btns = document.querySelectorAll(el);
+
+  if (!btns.length) throw Error("No elements found: " + el);
+
+  btns.forEach(btnEl => {
+    const tooltipId = btnEl.dataset.tooltip;
+    const tooltipEl = document.getElementById(tooltipId);
+
+    if (!tooltipEl) return;
+
+    btnEl.addEventListener("mouseenter", (e) => {
+      tooltipEl.style.display = "block";
+      move(e);
+    });
+
+    btnEl.addEventListener("mousemove", move);
+
+    btnEl.addEventListener("mouseleave", () => {
+      tooltipEl.style.display = "none";
+    });
+    
+    function move(e) {
+      tooltipEl.style.top = e.pageY + 10 + "px";
+      tooltipEl.style.left = e.pageX + 10 + "px";
+    }
+  });
 };
