@@ -316,7 +316,8 @@ click("#btn", () => state.name = "Signel.js");
 
 ## 11. Online demos
 [Online mini timer](https://jsfiddle.net/jahongirsobirov/fno2qabe/6/)
-
+[Number list](https://jsfiddle.net/jahongirsobirov/q92j5a6v/7/)
+[Tabs](https://jsfiddle.net/jahongirsobirov/o940rkvy/6/)
 ---
 
 ## Final Words
