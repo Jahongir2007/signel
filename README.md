@@ -1,332 +1,202 @@
-# Signel.js v1.2.0
+# Signel.js v2.0.0 Documentation
+## Overview
 
-**Signel.js** is a tiny reactive JavaScript micro‑library for building interactive UI without frameworks.
-It focuses on **reactive state**, **DOM bindings**, and **simple helpers**.
+Signel.js is a small JavaScript library that helps with reactivity and DOM manipulation. It allows for a simple state management system with reactive updates to the DOM and provides useful utilities to interact with DOM elements.
 
-Author: Jahongir Sobirov
-License: MIT
-
----
-
-## Table of Contents
-
-1. Getting Started
-2. Core Concept: Reactive State
-3. `el()` – Reactive Template Binding
-4. Events Helpers
-
-   * `click()` / `button()`
-   * `hover()`
-5. Form Bindings
-
-   * `input()`
-   * `checkbox()`
-   * `model()`
-6. Watching State Changes
-
-   * `watch()`
-7. UI Helpers
-
-   * `toggle()`
-   * `tabs()`
-   * `tooltip()`
-8. Reactive Lists
-
-   * `list()`
-   * `renderList()`
-9. Styling & Classes
-10. Design Philosophy & Notes
-11. Online demos
-
----
-
-## 1. Getting Started
-
-Include Signel.js in your page:
-
+## Installation
+With CDN:
 ```html
 <script src="https://signel.onrender.com/signel.js"></script>
 ```
+With NPM:
+```bash
+npm install signel
+```
 
-Signel works directly with the DOM. No build tools required.
+## Core Features
 
----
+### 1. Reactivity System
+### 2. DOM Manipulation
+### 3. Template Binding
 
-## 2. Core Concept: Reactive State
+### 1. Reactivity System
 
-Signel uses JavaScript `Proxy` to make state reactive.
+Signel.js introduces a reactive state management system where changes to an object’s properties automatically trigger updates to the DOM.
 
-Whenever you update a state property, **DOM automatically re‑renders**.
-
+ - `state(obj)`
+Creates a reactive state object using a JavaScript `Proxy`. This enables automatic tracking and updating when state properties change.
+#### Usage
 ```js
-const state = el("#app", {
-  name: "Jahongir",
+const state = state({
   count: 0
 });
 ```
-
----
-
-## 3. `el(selector, state)` – Reactive Template Binding
-
-Binds a state object to one or more elements.
-
-### HTML
-
-```html
-<div id="app">
-  Hello $$name 👋
-  <p>Count: $$count</p>
-</div>
+ - This will allow you to set up reactive properties (`count` in the example above) that will automatically trigger updates in the DOM when modified.
+#### Example
+```js
+state.count = 10;  // Triggers reactivity system to update related DOM elements
 ```
 
-### JS
+ - `track(target, key)`
+Tracks changes to a specific property (`key`) on a `target` object and registers any "active effect" (i.e., a function that needs to run when the property changes).
 
+ - `trigger(target, key)`
+When a property (`key`) of a `target` object changes, this function triggers the registered effect, re-running the effect and updating the DOM if necessary.
+
+ - `render(fn)`
+This method registers a "reactive effect," a function that should run whenever the state is modified. The effect will be re-executed whenever any part of the state it depends on changes.
+
+#### Example:
 ```js
-const state = el("#app", {
-  name: "Jahongir",
-  count: 1,
-  classes: "card active",
-  style: "color: blue;"
+render(() => {
+  console.log(state.count);
 });
 ```
+This will log the `state.count` value to the console every time it changes.
 
-### Supported features
+### 2. DOM Manipulation Utilities
+Signel.js provides various methods for easy DOM manipulation and event handling.
 
-* `$$key` → text interpolation
-* `state.style` → inline styles
-* `state.classes` → className string
+ - `dom(selector)`
+This function selects DOM elements based on a CSS selector and provides a chainable API to manipulate those elements.
 
----
+#### Available Methods:
 
-## 4. Event Helpers
-
-### `click(selector, fn)` / `button(selector, fn)`
-
-Attach click listeners.
-
+ - `text(content)`
+Sets the text content of all selected elements. If no argument is passed, it gets the text content of the first element.
 ```js
-click("#inc", () => {
-  state.count++;
-});
+dom('.my-element').text('Hello World');
 ```
 
-> `button()` is an alias of `click()`
-
----
-
-### `hover(selector, fn)`
-
+ - `show()`
+Displays the selected elements by setting their `display` style to `''`.
 ```js
-hover(".card", el => {
-  el.style.background = "#eee";
-});
+dom('.hidden').show();
 ```
 
----
+ - `hide()`
+Hides the selected elements by setting their `display` style to `'none'`.
+```js
+dom('.visible').hide();
+```
 
-## 5. Form Bindings
+ - `css(style)`
+Applies CSS styles to the selected elements. You provide a string of CSS styles.
+```js
+dom('.box').css('background-color: red; width: 100px;');
+```
 
-### `input(selector, state, key)`
+ - `val(newValue)`
+Sets the value of the selected elements (e.g., form inputs). If no value is provided, it retrieves the value of the first selected element.
+```js
+dom('input').val('new value');
+```
 
-One‑way input binding.
+ - `click(fn)`
+Adds a click event listener to the selected elements.
+```js
+dom('.button').click(() => alert('Button clicked!'));
+```
 
+ - `change(fn)`
+Adds a change event listener to the selected elements (useful for form elements like inputs and selects).
+```js
+dom('input').change(() => alert('Input changed!'));
+```
+
+ - `hover(overFn, outFn)`
+Adds mouseenter and mouseleave event listeners to the selected elements.
+```js
+dom('.item').hover(
+  () => console.log('Hovered over'),
+  () => console.log('Hovered out')
+);
+```
+
+ - `html(value)`
+Gets or sets the inner HTML content of the selected elements.
+```js
+dom('.container').html('<p>New HTML content</p>');
+```
+
+ - `addClass(className)`
+Adds a class to the selected elements.
+```js
+dom('.item').addClass('active');
+```
+
+ - `removeClass(className)`
+Removes a class from the selected elements.
+```js
+dom('.item').removeClass('active');
+```
+
+ - `toggleClass(className)`
+Toggles a class on the selected elements.
+```js
+dom('.item').toggleClass('active');
+```
+
+- `hasClass(className)`
+Checks if the first selected element has the specified class.
+```js
+dom('.item').hasClass('active');  // returns true or false
+```
+
+ - `attr(name, value)`
+Gets or sets an attribute on the selected elements.
+```js
+dom('.image').attr('src', 'new-image.jpg');
+```
+
+ - `removeAttr(name)`
+Removes an attribute from the selected elements.
+```js
+dom('.image').removeAttr('src');
+```
+
+ - `bind(state)`
+Binds the state to the selected elements. This allows you to replace placeholder variables (e.g., `$$count`) inside the element’s content with actual state values.
+
+#### Usage:
+```js
+dom('.count-display').bind(state);
+```
+
+#### Example:
 ```html
-<input id="nameInput" />
+<div class="count-display">$$count</div>
 ```
 
-```js
-input("#nameInput", state, "name");
-```
+If `state.count` is `5`, the div will display `5`.
 
----
-
-### `checkbox(selector, state, key)`
-
+### 2. Example Usage
+#### Example 1: Simple State Binding and DOM Manipulation
 ```html
-<input type="checkbox" id="agree" />
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Signel.js Example</title>
+    <script src="https://signel.onrender.com/signel.js"></script>
+  </head>
+  <body>
+    <div id="count-display">Count: $$count</div>
+    <button id="increment-btn">Increment</button>
+    
+    <script>
+      const state = state({ count: 0 });
+
+      // Bind state to DOM
+      dom('#count-display').bind(state);
+
+      // Button click increments the state
+      dom('#increment-btn').click(() => {
+        state.count += 1;
+      });
+    </script>
+  </body>
+</html>
 ```
 
-```js
-checkbox("#agree", state, "accepted");
-```
-
----
-
-### `model(selector, state, key)` (Two‑way binding)
-
-Works like `v-model`.
-
-```html
-<input id="username" />
-```
-
-```js
-model("#username", state, "name");
-```
-
-Supports:
-
-* text inputs
-* checkboxes
-* select
-
----
-
-## 6. Watching State Changes
-
-### `watch(state, key, fn)`
-
-Run logic when a value changes.
-
-```js
-watch(state, "count", value => {
-  console.log("Count changed:", value);
-});
-```
-
----
-
-## 7. UI Helpers
-
-### `toggle({ btn, content })`
-
-```js
-toggle({
-  btn: ".toggle-btn",
-  content: ".toggle-content"
-});
-```
-
-Click button → show/hide content.
-
----
-
-### `tabs({ btn, panel })`
-
-```js
-tabs({
-  btn: [".tab-btn"],
-  panel: [".tab-panel"]
-});
-```
-
-Tabs are matched by index.
-
----
-
-### `tooltip(selector)`
-
-### HTML
-
-```html
-<button data-tooltip="tip1">Hover</button>
-<div id="tip1" class="tooltip">Hello</div>
-```
-
-### JS
-
-```js
-tooltip("[data-tooltip]");
-```
-
-Tooltip follows mouse.
-
----
-
-## 8. Reactive Lists
-
-### `list(initialArray)`
-
-Creates a reactive array.
-
-```js
-const todos = list(["Learn JS", "Build Startup"]);
-```
-
----
-
-### `renderList(selector, reactiveList, renderItem)`
-
-```html
-<ul id="todos"></ul>
-```
-
-```js
-renderList("#todos", todos, item => `<li>${item}</li>`);
-```
-
-Update array → UI updates automatically.
-
-```js
-todos.push("Ship Signel.js");
-```
-
----
-
-## 9. Styling & Classes
-
-### Classes
-
-```js
-state.classes = "card active";
-```
-
-> Overwrites element className
-
-### Styles
-
-```js
-state.style = "color:red; font-weight:bold;";
-```
-
----
-
-## 10. Design Philosophy & Notes
-
-* No virtual DOM
-* No JSX
-* No build step
-* State‑driven UI
-* Inspired by Vue / Svelte / Solid
-
-### Recommendations
-
-* Keep `id` static in HTML
-* Use state for UI, not DOM queries
-* Avoid heavy re‑render in big templates
-
----
-
-## Example
-
-```html
-<div id="app">Hello $$name</div>
-<input id="name" />
-<button id="btn">Change</button>
-```
-
-```js
-const state = el("#app", { name: "World" });
-model("#name", state, "name");
-click("#btn", () => state.name = "Signel.js");
-```
-
----
-
-## 11. Online demos
-[Online mini timer](https://jsfiddle.net/jahongirsobirov/fno2qabe/6/)
-[Number list](https://jsfiddle.net/jahongirsobirov/q92j5a6v/7/)
-[Tabs](https://jsfiddle.net/jahongirsobirov/o940rkvy/6/)
----
-
-## Final Words
-
-Signel.js is perfect for:
-
-* small projects
-* admin panels
-* landing pages
-* learning reactivity internals
-
-You are encouraged to extend it 🚀
+This example shows how the state object is bound to the DOM, and clicking the button will update the count and automatically update the DOM.
