@@ -1,292 +1,155 @@
 /*
-  Signel.js v1.2.0
+  Signel.js v2.0.0
   Author: Jahongir Sobirov
   License: MIT
   All rights reserved
 */
-window.el = function (selector, state = {}) {
-  const elements = Array.from(document.querySelectorAll(selector));
-  if (!elements.length) throw Error("No elements found: " + selector);
+const deps = new Map();
+let activeEffect = null;
 
-  // save templates for each element
-  const templates = elements.map(el => el.innerHTML);
+function track(target, key) {
+  if (!activeEffect) return;
 
-  state.__bindings = {};
-  const proxy = new Proxy(state, {
-    set(target, prop, value) {
-      target[prop] = value;
+  let depsMap = deps.get(target);
+  if (!depsMap) deps.set(target, (depsMap = new Map()));
 
-      render();
-      const bindings = state.__bindings[prop];
-      if (Array.isArray(bindings)) {
-        bindings.forEach(binding => {
-          if (typeof binding === "function") {
-            binding(value);               // watch()
-          } else if ("checked" in binding) {
-            binding.checked = !!value;    // checkbox
-          } else if ("value" in binding) {
-            binding.value = value;        // input / select
-          }
-        });
-      }
+  let dep = depsMap.get(key);
+  if (!dep) depsMap.set(key, (dep = new Set()));
 
-      return true;
-    }
-  });
-
-  function render() {
-    elements.forEach((el, i) => {
-      el.innerHTML = templates[i].replace(/\$\$(\w+)/g, (_, key) => {
-        return proxy[key] ?? "";
-      });
-
-      if(state.style){
-        el.style.cssText = state.style;
-      }
-
-      if(state.classes){
-        el.className = state.classes;
-      }
-    });
-  }
-
-  render();
-  return proxy;
-};
-
-window.button = function (selector, fn) {
-  const elements = Array.from(document.querySelectorAll(selector));
-  if (!elements.length) throw Error("No elements found: " + selector);
-
-  elements.forEach(el => {
-    el.addEventListener("click", () => fn(el));
-  });
-
-  return elements;
-};
-
-window.click = function (selector, fn) {
-  const elements = Array.from(document.querySelectorAll(selector));
-  if (!elements.length) throw Error("No elements found: " + selector);
-
-  elements.forEach(el => {
-    el.addEventListener("click", () => fn(el));
-  });
-
-  return elements;
-};
-
-window.input = function (selector, state, key) {
-  const inputs = Array.from(document.querySelectorAll(selector));
-
-  // Bind each input
-  inputs.forEach(el => {
-    // When typing → update state → updates DOM + other inputs
-    el.addEventListener("input", () => {
-      state[key] = el.value;
-    });
-
-    // store binding
-    if (!state.__bindings[key]) state.__bindings[key] = [];
-    state.__bindings[key].push(el);
-
-    // initial sync state → input
-    el.value = state[key] ?? "";
-  });
-};
-
-window.toggle = function ({ btn, content }) {
-  const btns = Array.from(document.querySelectorAll(btn));
-  if (!btns.length) throw Error("No elements found: " + btn);
-
-  const contents = Array.from(document.querySelectorAll(content));
-  if (!contents.length) throw Error("No elements found: " + content);
-
-  btns.forEach(btnEl => {
-    btnEl.addEventListener("click", () => {
-      contents.forEach(contentEl => {
-        contentEl.style.display =
-          contentEl.style.display === "none" ? "block" : "none";
-      });
-    });
-  });
-};
-
-window.tabs = function({ btn, panel }) {
-  if (!Array.isArray(btn) || !Array.isArray(panel)) {
-    throw Error("btn and panel must be arrays");
-  }
-
-  if (btn.length !== panel.length) {
-    throw Error("btn and panel arrays must have equal length");
-  }
-
-  btn.forEach((btnSelector, i) => {
-    const btns = document.querySelectorAll(btnSelector);
-    const panels = document.querySelectorAll(panel[i]);
-
-    if (!btns.length) throw Error(`Buttons not found: ${btnSelector}`);
-    if (!panels.length) throw Error(`Panels not found: ${panel[i]}`);
-
-    // hide all panels at start except first
-    panels.forEach((p, index) =>
-      p.style.display = index === 0 ? "block" : "none"
-    );
-
-    btns.forEach((btnEl, index) => {
-      btnEl.addEventListener("click", () => {
-        // hide all panels
-        panels.forEach(p => p.style.display = "none");
-
-        // show the panel with same index
-        panels[index].style.display = "block";
-      });
-    });
-  });
-};
-
-window.checkbox = function(selector, state, key) {
-  const els = document.querySelectorAll(selector);
-  els.forEach(el => {
-    el.checked = state[key] ?? false;
-
-    el.addEventListener("change", () => state[key] = el.checked);
-
-    if (!state.__bindings) state.__bindings = {};
-    if (!state.__bindings[key]) state.__bindings[key] = [];
-    state.__bindings[key].push(el);
-  });
-};
-
-function reactiveArray(arr, notify) {
-  return new Proxy(arr, {
-    set(target, prop, value) {
-      target[prop] = value;
-      notify();
-      return true;
-    }
-  });
+  dep.add(activeEffect);
 }
 
-window.list = function(initial = []) {
-  if (!Array.isArray(initial)) {
-    throw Error("list() expects an array");
-  }
+function trigger(target, key) {
+  const depsMap = deps.get(target);
+  if (!depsMap) return;
 
-  const subscribers = new Set();
+  const dep = depsMap.get(key);
+  dep && dep.forEach(fn => fn());
+}
 
-  function notify() {
-    subscribers.forEach(fn => fn(proxy));
-  }
-
-  const proxy = new Proxy(initial, {
-    set(target, prop, value) {
-      target[prop] = value;
-
-      // ignore length changes optimization (optional)
-      notify();
-
+window.state = obj =>
+  new Proxy(obj, {
+    get(target, key) {
+      track(target, key);
+      return target[key];
+    },
+    set(target, key, value) {
+      if (target[key] === value) return true;
+      target[key] = value;
+      trigger(target, key);
       return true;
     }
   });
 
-  proxy.subscribe = function(fn) {
-    subscribers.add(fn);
-    fn(proxy); // initial run
-    return () => subscribers.delete(fn);
-  };
-
-  return proxy;
+window.render = fn => {
+  activeEffect = fn;
+  fn();
+  activeEffect = null;
 };
 
-window.renderList = function(selector, reactiveList, renderItem) {
-  const els = document.querySelectorAll(selector);
+window.dom = function(selector) {
+    const elements = document.querySelectorAll(selector);
 
-  reactiveList.subscribe(arr => {
-    els.forEach(el => {
-      el.innerHTML = arr.map(renderItem).join("");
-    });
-  });
+    return {
+        text(content) {
+            elements.forEach(el => el.textContent = content);
+            return this;
+        },
+        show() {
+            elements.forEach(el => el.style.display = '');
+            return this;
+        },
+        hide() {
+            elements.forEach(el => el.style.display = 'none');
+            return this;
+        },
+        css(style) {
+            elements.forEach(el => el.style.cssText = style);
+            return this;
+        },
+        val(newValue) {
+            if (newValue === undefined) {
+                // getter: return first element's value
+                return elements[0]?.value;
+            } else {
+                // setter
+                elements.forEach(el => el.value = newValue);
+                return this;
+            }
+        },
+        click(fn) {
+            elements.forEach(el => el.addEventListener('click', fn));
+            return this;
+        },
+        change(fn) {
+            elements.forEach(el => el.addEventListener('change', fn));
+            return this;
+        },
+        hover(overFn, outFn) {
+            elements.forEach(el => {
+                if (overFn) el.addEventListener('mouseenter', overFn);
+                if (outFn) el.addEventListener('mouseleave', outFn);
+            });
+            return this;
+        },
+
+        html(value) {
+            if (value === undefined) {
+                return elements[0]?.innerHTML;
+            }
+            elements.forEach(el => el.innerHTML = value);
+            return this;
+        },
+
+        addClass(className) {
+            elements.forEach(el => el.classList.add(className));
+            return this;
+        },
+        removeClass(className) {
+            elements.forEach(el => el.classList.remove(className));
+            return this;
+        },
+        toggleClass(className) {
+            elements.forEach(el => el.classList.toggle(className));
+            return this;
+        },
+        hasClass(className) {
+            return elements[0]?.classList.contains(className);
+        },
+
+        attr(name, value) {
+            if (value === undefined) {
+                return elements[0]?.getAttribute(name);
+            }
+            elements.forEach(el => el.setAttribute(name, value));
+            return this;
+        },
+        removeAttr(name) {
+            elements.forEach(el => el.removeAttribute(name));
+            return this;
+        },
+
+        bind(state) {
+            elements.forEach(el => {
+                if (!el.__template) {
+                    el.__template = el.textContent;
+                }
+            });
+
+            render(() => {
+                elements.forEach(el => {
+                    let output = el.__template;
+
+                    for (const key in state) {
+                        output = output.replaceAll(`$$${key}`, state[key]);
+                    }
+
+                    el.textContent = output;
+                });
+            });
+
+            return this;
+        }
+
+    }
 }
-
-window.model = function(selector, state, key) {
-  const els = document.querySelectorAll(selector);
-  if (!els.length) throw Error("No elements found");
-
-  if (!state.__bindings) state.__bindings = {};
-  if (!state.__bindings[key]) state.__bindings[key] = [];
-
-  els.forEach(el => {
-    // initial value
-    if (el.type === "checkbox") {
-      el.checked = !!state[key];
-    } else {
-      el.value = state[key] ?? "";
-    }
-
-    const event =
-      el.tagName === "SELECT" || el.type === "checkbox"
-        ? "change"
-        : "input";
-
-    // input → state
-    el.addEventListener(event, () => {
-      state[key] = el.type === "checkbox" ? el.checked : el.value;
-    });
-
-    // state → input
-    state.__bindings[key].push(value => {
-      if (el.type === "checkbox") {
-        el.checked = !!value;
-      } else {
-        el.value = value ?? "";
-      }
-    });
-  });
-};
-
-window.watch = function(state, key, fn) {
-  if (!state.__bindings) state.__bindings = {};
-  if (!state.__bindings[key]) state.__bindings[key] = [];
-  state.__bindings[key].push(fn);
-};
-
-window.hover = function(selector, fn) {
-  const elements = Array.from(document.querySelectorAll(selector));
-  if (!elements.length) throw Error("No elements found: " + selector);
-
-  elements.forEach(el => {
-    el.addEventListener("mouseenter", () => fn(el));
-  });
-
-  return elements;
-};
-
-window.tooltip = function (el) {
-  const btns = document.querySelectorAll(el);
-
-  if (!btns.length) throw Error("No elements found: " + el);
-
-  btns.forEach(btnEl => {
-    const tooltipId = btnEl.dataset.tooltip;
-    const tooltipEl = document.getElementById(tooltipId);
-
-    if (!tooltipEl) return;
-
-    btnEl.addEventListener("mouseenter", (e) => {
-      tooltipEl.style.display = "block";
-      move(e);
-    });
-
-    btnEl.addEventListener("mousemove", move);
-
-    btnEl.addEventListener("mouseleave", () => {
-      tooltipEl.style.display = "none";
-    });
-    
-    function move(e) {
-      tooltipEl.style.top = e.pageY + 10 + "px";
-      tooltipEl.style.left = e.pageX + 10 + "px";
-    }
-  });
-};
