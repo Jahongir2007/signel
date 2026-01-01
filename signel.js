@@ -1,5 +1,5 @@
 /*
-  Signel.js v2.0.0
+  Signel.js v2.1.0
   Author: Jahongir Sobirov
   License: MIT
   All rights reserved
@@ -149,6 +149,11 @@ window.dom = function(selector) {
             });
 
             return this;
+        },
+
+        on(event, fn){
+            elements.forEach(el => el.addEventListener(event, fn))
+            return this
         }
 
     }
