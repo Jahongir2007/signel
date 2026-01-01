@@ -1,4 +1,4 @@
-# Signel.js v2.0.0 Documentation
+# Signel.js v2.2.0 Documentation
 ## Overview
 
 Signel.js is a small JavaScript library that helps with reactivity and DOM manipulation. It allows for a simple state management system with reactive updates to the DOM and provides useful utilities to interact with DOM elements.
@@ -16,8 +16,9 @@ npm install signel
 ## Core Features
 
 ### 1. Reactivity System
-### 2. DOM Manipulation
-### 3. Template Binding
+### 2. Watchers & Derived State
+### 3. DOM Manipulation
+### 4. Template Binding
 
 ### 1. Reactivity System
 
@@ -27,7 +28,7 @@ Signel.js introduces a reactive state management system where changes to an obje
 Creates a reactive state object using a JavaScript `Proxy`. This enables automatic tracking and updating when state properties change.
 #### Usage
 ```js
-const state = state({
+var state = state({
   count: 0
 });
 ```
@@ -54,7 +55,70 @@ render(() => {
 ```
 This will log the `state.count` value to the console every time it changes.
 
-### 2. DOM Manipulation Utilities
+### 2. Watchers & Derived State
+Signel.js provides utilities to observe state changes and derive new reactive values without directly manipulating the DOM.
+
+ - `watch(getter, callback)`
+Watches a reactive value and executes a callback whenever it changes.
+ - `getter` → a function that returns a reactive value
+ - `callback(newValue, oldValue)` → runs when the value changes
+
+#### Usage:
+```js
+watch(()=> state.count, (newVal, oldVal)=> {
+  console.log('Count changed from', oldVal, 'to', newVal);
+});
+```
+**Notes**
+ - The getter function is required to enable reactivity.
+ - The callback only runs when the value actually changes.
+
+ - `watchKey(state, key, callback)`
+A shortcut for watching a specific key in a state object.
+
+#### Usage:
+```js
+watchKey(state, 'count', (newVal, oldVal) => {
+  console.log(newVal);
+});
+```
+#### Equivalent to
+```js
+watch(() => state.count, callback);
+```
+
+ - `computed(getter)`
+
+Creates a **derived reactive value** based on other reactive state.
+ - Automatically recalculates when dependencies change
+ - Returns a **read-only reactive value**
+
+#### Usage:
+```js
+const doubleCount = computed(() => state.count * 2);
+```
+#### Example:
+```js
+render(() => {
+  console.log(doubleCount.value);
+});
+```
+When `state.count` changes, `doubleCount.value` updates automatically.
+
+#### Example: watch + computed together
+```js
+var state = state({ count: 1 });
+
+const doubled = computed(() => state.count * 2);
+
+watch(() => doubled.value, (newVal) => {
+    console.log('Doubled count:', newVal);
+});
+
+state.count = 5; // Logs: Doubled count: 10
+```
+
+### 3. DOM Manipulation Utilities
 Signel.js provides various methods for easy DOM manipulation and event handling.
 
  - `dom(selector)`
@@ -169,6 +233,12 @@ dom('.count-display').bind(state);
 ```
 
 If `state.count` is `5`, the div will display `5`.
+
+ - `on(event, fn)`
+Sets events and functions to the elements. And execute that function on that event
+```js
+dom('#phone').on('input', ()=> console.log('Typing...'))
+```
 
 ### 2. Example Usage
 #### Example 1: Simple State Binding and DOM Manipulation
