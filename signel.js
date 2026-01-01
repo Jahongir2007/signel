@@ -1,5 +1,5 @@
 /*
-  Signel.js v2.1.0
+  Signel.js v2.2.0
   Author: Jahongir Sobirov
   License: MIT
   All rights reserved
@@ -157,4 +157,29 @@ window.dom = function(selector) {
         }
 
     }
+}
+
+window.watch = function (getter, callback) {
+  let oldVal;
+
+  render(() => {
+    const newVal = getter()
+    if (newVal !== oldVal) {
+      callback(newVal, oldVal);
+      oldVal = newVal;
+    }
+  });
+};
+
+window.watchKey = function (state, key, cb) {
+  watch(() => state[key], cb);
+}
+
+window.computed = function(fn){
+    let cached
+    render(()=> {
+        cached = fn()
+    })
+
+    return ()=> cached
 }
