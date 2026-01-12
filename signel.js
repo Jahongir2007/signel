@@ -1,5 +1,5 @@
 /*
-  Signel.js v2.2.0
+  Signel.js v2.3.0
   Author: Jahongir Sobirov
   License: MIT
   All rights reserved
@@ -27,25 +27,72 @@ function trigger(target, key) {
   dep && dep.forEach(fn => fn());
 }
 
-window.state = obj =>
-  new Proxy(obj, {
-    get(target, key) {
-      track(target, key);
-      return target[key];
-    },
-    set(target, key, value) {
-      if (target[key] === value) return true;
-      target[key] = value;
-      trigger(target, key);
-      return true;
+window.state = value => {
+    // ✅ primitive → wrap into { val }
+    if (typeof value !== 'object' || value === null) {
+        return state({ val: value });
     }
-  });
+
+    // ✅ object → proxy
+    return new Proxy(value, {
+        get(target, key) {
+        track(target, key);
+        return target[key];
+        },
+        set(target, key, newValue) {
+        if (target[key] === newValue) return true;
+        target[key] = newValue;
+        trigger(target, key);
+        return true;
+        }
+    });
+};
 
 window.render = fn => {
-  activeEffect = fn;
-  fn();
-  activeEffect = null;
+    activeEffect = fn;
+    fn();
+    activeEffect = null;
 };
+
+function effect(fn) {
+  const runner = () => {
+    activeEffect = runner;
+    fn();
+    activeEffect = null;
+  };
+  runner();
+  return runner;
+}
+
+window.when = condition => {
+  let renderFn = null;
+  let cleanup = null;
+
+  const runner = () => {
+    if (!condition()) {
+      if (cleanup) {
+        cleanup();
+        cleanup = null;
+      }
+      return;
+    }
+
+    if (renderFn) {
+      cleanup = renderFn() || null;
+    }
+  };
+
+  effect(runner);
+
+  return {
+    render(fn) {
+      renderFn = fn;
+      runner(); // run immediately if condition is true
+      return this;
+    }
+  };
+};
+
 
 window.dom = function(selector) {
     const elements = document.querySelectorAll(selector);
@@ -154,8 +201,59 @@ window.dom = function(selector) {
         on(event, fn){
             elements.forEach(el => el.addEventListener(event, fn))
             return this
-        }
+        },
 
+        model(state, key) {
+            elements.forEach(el => {
+
+                render(() => {
+                    if (el.value !== state[key]) {
+                        el.value = state[key] ?? ''
+                    }
+                })
+
+                const event = el.tagName === 'SELECT' ? 'change' : 'input'
+
+                el.addEventListener(event, () => {
+                    state[key] = el.value
+                })
+            })
+
+            return this
+        },
+
+        data(key, value){
+            // GET
+            if (value === undefined) {
+                return elements[0]?.dataset[key]
+            }
+
+            // SET
+            elements.forEach(el => {
+                el.dataset[key] = value
+            })
+
+            return this
+        },
+
+        loop(state, key, template){
+            elements.forEach(el => {
+                render(() => {
+                    const arr = state[key]
+
+                    if (!Array.isArray(arr)) {
+                        console.warn('loop() expects an array')
+                        return
+                    }
+
+                    el.innerHTML = arr.map((item, index) =>
+                        template(item, index)
+                    ).join('')
+                })
+            })
+
+            return this
+        }
     }
 }
 
@@ -175,11 +273,40 @@ window.watchKey = function (state, key, cb) {
   watch(() => state[key], cb);
 }
 
-window.computed = function(fn){
+window.derive = function(fn){
     let cached
     render(()=> {
         cached = fn()
     })
 
     return ()=> cached
+}
+
+const arrayMethods = ['push', 'pop', 'shift', 'unshift', 'splice', 'sort', 'reverse']
+
+window.list = function(initial = []) {
+  const raw = [...initial]
+
+  const proxy = new Proxy(raw, {
+    get(target, key) {
+      if (arrayMethods.includes(key)) {
+        return (...args) => {
+          const res = Array.prototype[key].apply(target, args)
+          trigger(target, 'iterate')
+          return res
+        }
+      }
+
+      track(target, 'iterate')
+      return Reflect.get(target, key)
+    },
+
+    set(target, key, value) {
+      const res = Reflect.set(target, key, value)
+      trigger(target, 'iterate')
+      return res
+    }
+  })
+
+  return proxy
 }
