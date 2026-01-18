@@ -1,147 +1,238 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <title>Signel v2 – Reactive JS without frameworks</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Signel.js Landing</title>
 
-  <style>
-    body {
-      font-family: system-ui, sans-serif;
-      background: #0f172a;
-      color: #e5e7eb;
-      margin: 0;
-    }
+<!-- Google Font -->
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
 
-    header {
-      padding: 80px 20px;
-      text-align: center;
-    }
+<style>
+:root {
+  --bg: #0f172a;
+  --card: #111827;
+  --accent: #6366f1;
+  --text: #e5e7eb;
+  --muted: #9ca3af;
+}
 
-    h1 {
-      font-size: 3rem;
-      margin-bottom: 10px;
-    }
+* {
+  box-sizing: border-box;
+}
 
-    p {
-      opacity: 0.9;
-    }
+body {
+  margin: 0;
+  font-family: Inter, system-ui, sans-serif;
+  background: linear-gradient(180deg, #020617, #0f172a);
+  color: var(--text);
+}
 
-    .btn {
-      margin-top: 20px;
-      padding: 12px 24px;
-      border: none;
-      background: #38bdf8;
-      color: #020617;
-      font-size: 1rem;
-      border-radius: 8px;
-      cursor: pointer;
-    }
+/* Layout */
+section {
+  padding: 6rem 1.5rem;
+  max-width: 1100px;
+  margin: auto;
+}
 
-    section {
-      max-width: 900px;
-      margin: auto;
-      padding: 40px 20px;
-    }
+.hero {
+  text-align: center;
+  padding-top: 8rem;
+}
 
-    .card {
-      background: #020617;
-      border-radius: 12px;
-      padding: 20px;
-      margin-bottom: 20px;
-    }
+.hero h1 {
+  font-size: clamp(2.5rem, 5vw, 4rem);
+  font-weight: 700;
+}
 
-    code {
-      background: #020617;
-      padding: 12px;
-      display: block;
-      border-radius: 8px;
-      overflow-x: auto;
-      color: #7dd3fc;
-    }
+.hero span {
+  color: var(--accent);
+}
 
-    pre {
-      background: #020617;
-      padding: 12px;
-      display: block;
-      border-radius: 8px;
-      overflow-x: auto;
-      color: #7dd3fc;
-    }
+.hero p {
+  max-width: 600px;
+  margin: 1.5rem auto;
+  color: var(--muted);
+  font-size: 1.1rem;
+}
 
-    .counter {
-      font-size: 2rem;
-      margin: 10px 0;
-    }
-  </style>
+button {
+  background: var(--accent);
+  color: white;
+  border: none;
+  padding: 0.9rem 1.5rem;
+  border-radius: 0.6rem;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: transform .15s, box-shadow .15s;
+}
+
+button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 30px rgba(99,102,241,.35);
+}
+
+/* Cards */
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 1.5rem;
+}
+
+.card {
+  background: linear-gradient(180deg, #020617, #020617) padding-box,
+              linear-gradient(180deg, #6366f1, #22d3ee) border-box;
+  border: 1px solid transparent;
+  border-radius: 1rem;
+  padding: 1.8rem;
+}
+
+.card h3 {
+  margin-top: 0;
+}
+
+/* Counter */
+.counter {
+  font-size: 3rem;
+  font-weight: 700;
+  color: var(--accent);
+}
+
+/* Newsletter */
+.newsletter {
+  background: #020617;
+  border-radius: 1rem;
+  padding: 3rem;
+  text-align: center;
+}
+
+input {
+  padding: 0.8rem;
+  border-radius: 0.5rem;
+  border: none;
+  width: 240px;
+  margin-right: .5rem;
+}
+
+/* Footer */
+footer {
+  text-align: center;
+  padding: 3rem 1rem;
+  color: var(--muted);
+}
+</style>
 </head>
+
 <body>
 
-<header>
-  <h1>⚡ Signel v2</h1>
-  <p>Reactive JavaScript without frameworks</p>
-
-  <div class="counter">
-    Count: $$count
-  </div>
-
-  <button class="btn" id="inc">Increment</button>
-</header>
-
-<section>
-  <div class="card">
-    <h2>✨ Why Signel?</h2>
-    <p>
-      Signel is a tiny reactive engine inspired by Vue & Solid.
-      No virtual DOM. No JSX. Just JavaScript.
-    </p>
-  </div>
-
-  <div class="card">
-    <h2>📦 Installation</h2>
-    <p>
-        With CMD:
-        <code>&ltscript src="https://signel.onrender.com/signel.js"&gt&lt/script&gt</code>
-    </p>
-    <p>
-        With NPM:
-        <code>npm i signel</code>
-    </p>
-  </div>
-
-  <div class="card">
-    <h2>🧠 Reactive binding</h2>
-    <pre>
-const state = state({ count: 0 });
-
-dom('.counter').bind(state);
-
-dom('#inc').click(() => {
-  state.count++;
-});
-</pre>
-  </div>
-
-  <div class="card">
-    <h2>🔗 Chainable DOM API</h2>
-    <pre>
-dom('#el')
-  .text('Hello Signel')
-  .addClass('active')
-  .show();
-    </pre>
-  </div>
+<!-- HERO -->
+<section class="hero">
+  <h1>Build UI with <span>Signel.js</span></h1>
+  <p>
+    A tiny reactive JavaScript library for modern interfaces —
+    no build tools, no virtual DOM, just signals.
+  </p>
+  <button id="ctaBtn">Get Started</button>
 </section>
 
-<script src="./signel.js"></script>
+<!-- STATS -->
+<section>
+  <h2>Simple counter animation</h2>
+  <div class="counter"></div>
+</section>
+
+<!-- FEATURES -->
+<section>
+  <h2>Why Signel?</h2>
+  <div class="grid features"></div>
+</section>
+
+<!-- NEWSLETTER -->
+<section class="newsletter">
+  <h2>Stay in the loop</h2>
+  <p>Get updates when new versions drop.</p>
+  <input class="email" placeholder="you@example.com"/>
+  <button class="subscribe">Subscribe</button>
+  <p class="output"></p>
+</section>
+
+<footer>
+  © 2026 Signel.js — MIT License
+</footer>
+
+<!-- Signel.js (your library) -->
+<script src="./index.js">
+/* paste Signel.js here or include it as a separate file */
+</script>
+
 <script>
-  const app = state({ count: 0 });
+/* ---------------------------
+   HERO INTERACTION
+---------------------------- */
+const clicks = state(0)
 
-  dom('.counter').bind(app);
+document.getElementById('ctaBtn').onclick = () => {
+  clicks.val++
+}
 
-  dom('#inc').click(() => {
-    app.count++;
-  });
+effect(() => {
+  if (clicks.val > 0) {
+    alert(`Thanks for your interest! (${clicks.val})`)
+  }
+})
+
+/* ---------------------------
+   COUNTER (Animated Effect)
+---------------------------- */
+const users = state(0)
+
+users.root(document.body).render('.counter')
+
+let i = 0
+const interval = setInterval(() => {
+  users.val = i
+  i += 120
+  if (i > 12000) clearInterval(interval)
+}, 30)
+
+/* ---------------------------
+   FEATURES (Array State)
+---------------------------- */
+const features = state([
+  '⚡ Ultra-lightweight',
+  '🧠 Simple reactivity',
+  '🧩 Native Web Components',
+  '💾 Built-in persistence',
+  '🚫 No build step',
+  '✨ Modern API'
+], {
+  showEach: text => `
+    <div class="card">
+      <h3>${text.split(' ')[0]}</h3>
+      <p>${text.slice(2)}</p>
+    </div>
+  `
+})
+
+features
+  .root(document.body)
+  .render('.features')
+
+/* ---------------------------
+   NEWSLETTER FORM
+---------------------------- */
+const email = state('')
+
+email
+  .root(document.body)
+  .render('.email')
+  .render('.output')
+
+document.querySelector('.subscribe').onclick = () => {
+  email.val
+    ? email.val = 'Thanks for subscribing 🎉'
+    : email.val = 'Please enter a valid email'
+}
 </script>
 
 </body>
